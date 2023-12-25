@@ -6,6 +6,7 @@ const mappingsRouter = require('../routes/mappings');
 const testRouter = require('../routes/test');
 
 module.exports = function(app) {
+    app.set('view engine', 'pug')
     app.use(express.json());
     app.use('/api/uploads', uploadsRouter);
     app.use('/api/files', filesRouter);

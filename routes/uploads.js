@@ -3,6 +3,7 @@ const router = express.Router();
 const { Form } = require('multiparty');
 const { File } = require('../models/file');
 const { Upload } = require('../models/upload');
+const fs = require('fs');
 const auth = require('../middleware/auth');
 
 router.post('/', auth, async (req, res) => {
