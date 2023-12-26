@@ -1,6 +1,6 @@
-const express = require('express');
-const config = require('config')
-const app = express();
+const app = require("express")();
+const dotenv = require('dotenv');
+dotenv.config();
 
 require('./startup/routes')(app);
 require('./startup/db')();

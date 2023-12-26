@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const config = require('config');
+const dotenv = require('dotenv');
+const { randomBytes } = require('crypto');
+dotenv.config();
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -13,8 +15,15 @@ const userSchema = new mongoose.Schema({
         unique: true
     },
     password: {
-        type: String,
-        required: true
+        salt: {
+            type: String,
+            default: () => randomBytes(32).toString('hex'),
+            required: true
+        },
+        hash: {
+            type: String,
+            required: true
+        },
     },
     isAdmin: {
         type: Boolean,
@@ -22,11 +31,9 @@ const userSchema = new mongoose.Schema({
         required: true
     }
 });
-userSchema.methods.generateAuthToken = function() {
-    return jwt.sign({ _id: this._id, isAdmin: this.isAdmin }, config.get('jwtPrivateKey'));
+userSchema.methods.generateAuthToken = function () {
+    return jwt.sign({ _id: this._id, isAdmin: this.isAdmin }, process.env.JWT_PRIVATE_KEY);
 };
-
-
 
 const User = mongoose.model('User', userSchema);
 
