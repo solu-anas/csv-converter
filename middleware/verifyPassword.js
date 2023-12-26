@@ -3,8 +3,9 @@ const { createHash } = require('crypto');
 
 async function verifyPassword(req, res, next) {
     const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send('user not found');
+    
     const password = req.body.password;
-
     if (!password) res.status(401).send('No password provided');
 
     try {
@@ -17,7 +18,8 @@ async function verifyPassword(req, res, next) {
     }
 
     catch (error) {
-        console.error("Error:", error.message);
+        console.error("Error verifying the password:", error.message);
+        res.send(500).send('Internal Server Error');
     }
 }
 module.exports = verifyPassword;
