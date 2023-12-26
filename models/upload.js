@@ -1,15 +1,15 @@
 const { Schema, Types, model } = require('mongoose');
 
 const uploadSchema = new Schema({
-    uploadedFile: {
+    file: {
         type: Types.ObjectId,
         ref: 'File'
     },
-    uploadedBy: {
+    user: {
         type: Types.ObjectId,
         ref: 'User'
     },
-    uploadDate: {
+    date: {
         type: Date,
         default: Date.now
     }

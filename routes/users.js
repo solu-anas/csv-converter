@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const express = require('express');
 const auth = require('../middleware/auth');
 const router = express.Router();
-const { User, generateAuthToken } = require('../models/user');
+const { User } = require('../models/user');
 
 // Getting the current user
 router.get('/me', auth, async (req, res) => {
@@ -30,6 +30,7 @@ router.post('/', async (req, res) => {
     await user.save();
 
     const token = user.generateAuthToken();
+    console.log(token);
     res.header('x-auth-token', token).send(_.pick(user, ['_id', 'name', 'email']));
 });
 

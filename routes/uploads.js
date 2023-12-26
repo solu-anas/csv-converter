@@ -7,24 +7,16 @@ const fs = require('fs');
 const auth = require('../middleware/auth');
 
 router.post('/', auth, async (req, res) => {
-    // authentication
-    //...
-    // authorization
-    //...
-    // Input Validation
-    //...
-
-    // logged in, authorized, and valid
     let form = new Form();
     let file;
-    let report;
+    let upload;
     const user = req.user;
 
-    form.on('close', () => {
-        res.send("Success, Uploaded: ", report);
+    form.on('close', async () => {
+        res.send(upload);
     });
 
-    form.on('error', (err) => console.error("error:", err.message));
+    form.on('error', (err) => console.log("error:", err.message));
 
     form.on('part', async (part) => {
         if (!part.filename) return part.resume();
@@ -32,29 +24,24 @@ router.post('/', auth, async (req, res) => {
         if ((part.filename) && (part.name === 'file')) {
             // Create a new file entry in db
             file = new File();
-
             file.name = part.filename;
-
             file.size = 0;
-            part.on('data', (buf) => file.size += buf.length);
+            part.on('data', (buf) => {
+                file.size += buf.length
+            });
+            part.pipe(fs.createWriteStream(`./files/${file.uuid}.csv`));
             await file.save();
 
-            // Download content to filesystem in server
-            const csvPath = `./files/${file.uuid}.csv`;
-            await part.pipe(fs.createWriteStream(csvPath));
-            console.log('success, downloaded to filesystem');
-
             // Create a new upload entry in db
-            report = new Upload({
-                uploadedFile: file._id,
-                uploadedBy: user._id
+            upload = new Upload({
+                file: file._id,
+                user: user._id
             });
-            await report.save();
-            part.resume();
+            await upload.save();
         }
     });
-
     form.parse(req);
+
 });
 
 module.exports = router;
