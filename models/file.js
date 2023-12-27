@@ -1,14 +1,14 @@
 const { Schema, Types, model } = require('mongoose');
-const { randomUUID } = require('crypto');
+
 
 
 const fileSchema = new Schema({
-    name: {
+    originalName: {
         type: String
     },
     uuid: {
         type: Types.UUID,
-        default: () => randomUUID()
+        required: true
     },
     owner: {
         type: Types.ObjectId,

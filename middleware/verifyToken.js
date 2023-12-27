@@ -12,7 +12,7 @@ function verifyToken(req, res, next) {
         next();
     }
     catch (err) {
-        console.log(err);
+        console.error("Token Verification Error:", err.message);
         res.status(400).send('Invalid Token.');
     }
 }
