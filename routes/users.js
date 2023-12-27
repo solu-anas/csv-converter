@@ -1,6 +1,7 @@
 const { createHash } = require('crypto');
 const express = require('express');
 const verifyPassword = require('../middleware/verifyPassword');
+const verifyToken = require('../middleware/verifyToken');
 const router = express.Router();
 const { User } = require('../models/user');
 
@@ -9,9 +10,9 @@ router.get('/me', verifyPassword, async (req, res) => {
     res.send(user);
 });
 
-router.get('/dashboard', verifyToken, (req, res => {
+router.get('/dashboard', verifyToken, (req, res) => {
     // TODO
-}));
+});
 
 router.get('/all', verifyPassword, async (req, res) => {
     const users = await User.find().select('-password').sort('name');
