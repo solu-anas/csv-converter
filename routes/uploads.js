@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Configuring multer for uploads
 const storage = multer.diskStorage({
-    destination: join(__dirname, '../files/'),
+    destination: join(__dirname, '../tables/'),
     filename: (req, file, cb) => {
         const uuid = randomUUID();
         cb(null, uuid + '.csv')

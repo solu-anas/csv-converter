@@ -9,6 +9,9 @@ router.get('/me', verifyPassword, async (req, res) => {
     res.send(user);
 });
 
+router.get('/dashboard', verifyToken, (req, res => {
+    // TODO
+}));
 
 router.get('/all', verifyPassword, async (req, res) => {
     const users = await User.find().select('-password').sort('name');

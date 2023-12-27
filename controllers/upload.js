@@ -1,16 +1,17 @@
 const { Upload } = require('../models/upload');
-const { File } = require('../models/file');
+const { Table } = require('../models/table');
 
 module.exports = (req, res) => {
-    // new entry in files collection
-    const file = new File();
-    file.originalName = req.file.originalname;
-    file.size = req.file.size;
-    file.uuid = req.file.filename;
-    file.save().then((uploadedFile) => {
+    // new entry in Tables collection
+    const table = new Table();
+    table.uuid = req.file.filename;
+    table.owner = req.user._id;
+    table.originalName = req.file.originalname;
+    table.size = req.file.size;
+    table.save().then((uploadedTable) => {
         // new entry in uploads collection
         const upload = new Upload({
-            file: uploadedFile._id,
+            table: uploadedTable._id,
             user: req.user._id
         });
         upload
@@ -20,21 +21,21 @@ module.exports = (req, res) => {
                     { $match: { _id: upload._id } },
                     {
                         $lookup: {
-                            from: "files",
-                            localField: "file",
+                            from: "tables",
+                            localField: "table",
                             foreignField: "_id",
-                            as: "file"
+                            as: "table"
                         }
                     },
-                    { $unwind: "$file" },
+                    { $unwind: "$table" },
                     {
                         $project: {
                             _id: 0,
                             "uploadId": "$_id",
-                            "fileUUID": "$file.uuid"
+                            "tableUUID": "$table.uuid"
                         }
                     },
-                    { $unwind: "$fileUUID" },
+                    { $unwind: "$tableUUID" },
                 ];
                 Upload
                     .aggregate(pipeline)

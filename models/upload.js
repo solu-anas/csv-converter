@@ -1,9 +1,9 @@
 const { Schema, Types, model } = require('mongoose');
 
 const uploadSchema = new Schema({
-    file: {
+    table: {
         type: Types.ObjectId,
-        ref: 'File'
+        ref: 'Table'
     },
     user: {
         type: Types.ObjectId,

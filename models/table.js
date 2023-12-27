@@ -1,8 +1,6 @@
 const { Schema, Types, model } = require('mongoose');
 
-
-
-const fileSchema = new Schema({
+const tableSchema = new Schema({
     originalName: {
         type: String
     },
@@ -12,7 +10,8 @@ const fileSchema = new Schema({
     },
     owner: {
         type: Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        required: true
     },
     size: {
         type: String
@@ -27,6 +26,6 @@ const fileSchema = new Schema({
     }
 });
 
-const File = model('File', fileSchema);
+const Table = model('Table', tableSchema);
 
-module.exports.File = File;
+module.exports.Table = Table;
