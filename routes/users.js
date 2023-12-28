@@ -21,7 +21,6 @@ router.get('/all', verifyPassword, async (req, res) => {
 
 router.get('/login', verifyPassword, async (req, res) => {
     const user = await User.findById(req.user._id);
-    const token = user.generateAuthToken();
     res.json({ token: token });
 });
 
@@ -31,7 +30,7 @@ router.post('/', async (req, res) => {
 
     user = new User({
         name: req.body.name,
-        email: req.body.email
+        email: req.body.email,
     });
 
     user.password.hash = createHash('sha256').update(req.body.password + user.password.salt).digest('hex');

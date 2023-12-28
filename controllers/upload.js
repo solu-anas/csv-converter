@@ -1,4 +1,4 @@
-const { Upload } = require('../models/upload');
+const { Operation } = require('../models/operation');
 const { Table } = require('../models/table');
 
 module.exports = (req, res) => {
@@ -10,7 +10,8 @@ module.exports = (req, res) => {
     table.size = req.file.size;
     table.save().then((uploadedTable) => {
         // new entry in uploads collection
-        const upload = new Upload({
+        const upload = new Operation({
+            type: "upload",
             table: uploadedTable._id,
             user: req.user._id
         });
@@ -37,7 +38,7 @@ module.exports = (req, res) => {
                     },
                     { $unwind: "$tableUUID" },
                 ];
-                Upload
+                Operation
                     .aggregate(pipeline)
                     .then((results) => res.send(results[0]))
                     .catch((err) => console.error('Aggregation Error:', err.message))

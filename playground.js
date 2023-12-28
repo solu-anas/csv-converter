@@ -8,9 +8,8 @@ const map = new Map(
     ]
 )
 
-console.log(map.get('nom'));
-map.set('a', 'A');
-
+map.get(key)
+map.keys(key)
 let counter1 = 0;
 for (let key of map.keys()) {
     counter1++;
@@ -28,3 +27,14 @@ for (let [key, value] of map.entries()) {
     ++counter3;
     console.log(counter3, [key, value]);
 }
+
+const fs = require('fs');
+
+// csv parser
+const csv = require('csv-parser');
+const spectrum = require('csv-spectrum');
+
+spectrum((err, data) => {
+    if (err) return console.error(err.message);
+    console
+});

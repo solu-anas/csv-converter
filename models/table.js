@@ -19,10 +19,6 @@ const tableSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    },
-    isProcessed: {
-        type: Boolean,
-        default: false
     }
 });
 
