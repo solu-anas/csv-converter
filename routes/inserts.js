@@ -91,8 +91,8 @@ router.post('/start', verifyToken, async (req, res) => {
 
                         .on('error', (err) => console.error('Error:', err.message))
 
-                        .on('end', () => {
-                            console.log(results);
+                        .on('finish', () => {
+                            
                             return res.json({ newlyAdded: results.length })
                             //     Operation.findByIdAndUpdate(savedInsert._id, {
                             //         details: { isProgressEnd: true }
