@@ -12,23 +12,23 @@ const csv = require('csv-parser');
 const _ = require('lodash');
 const through2 = require('through2');
 
-/*router.get('/check-progress', async (req, res) => {
+router.get('/check-progress', async (req, res) => {
     const table = await Table.findOne({ uuid: req.body.tableUUID });
-
     if (!table) {
         res.status(404).send("table not found");
     }
 
+
     Operation.findOne({ table: table._id, type: "insert" })
         .then((operation) => {
-            res.send('woohoo')
+            res.json({details: operation.details})
             //res.json({ ...(operation.details) })
         })
         .catch((err) => {
             console.error("Operation Query Error:", err.message)
             res.status(400).send("Operation Query Error");
         })
-})*/
+})
 
 router.post('/start', verifyToken, async (req, res) => {
 
@@ -54,45 +54,46 @@ router.post('/start', verifyToken, async (req, res) => {
                     // const parser = fs.createReadStream(fileLocation).pipe(parse());
 
                     const results = [];
-                    
+
                     const parser = fs.createReadStream(fileLocation).pipe(csv());
-                    
+
                     let buffer = [];
                     const bufferSize = 100;
-                    
+
                     parser
                         .pipe(through2.obj((chunk, enc, cb) => {
                             const document = _.mapKeys(chunk, (value, key) => mapping.get(key));
-                            buffer.push(document);
-                            if (buffer.length < bufferSize) cb();
-                            else {
-                                // empty the buffer
-                                buffer = [];
-                                cb();
-                            }
-                            
+                            // buffer.push(document);
+                            // if (buffer.length < bufferSize) cb();
+                            // else {
+                            //     // empty the buffer
+                            //     buffer = [];
+                            //     cb();
+                            // }
+
                             console.log(document);
-                                (new Person(document))
+                            (new Person(document))
                                 .save()
                                 .then(() => {
                                     Operation.findByIdAndUpdate(savedInsert._id, {
                                         details: { progress: ++progressCounter }
-                                    }).catch((err) => {
-                                        console.error("Insertion Error:", err.message)
-                                        return res.status(500).json({ Error: err.message })
                                     })
+                                        .then(() => cb())
+                                        .catch((err) => {
+                                            console.error("Insertion Error:", err.message)
+                                            return res.status(500).json({ Error: err.message })
+                                        })
                                 })
                                 .catch((err) => {
                                     console.error("Insertion Error:", err.message)
                                     return res.status(500).json({ Error: err.message })
                                 })
-                            cb();
                         }))
 
                         .on('error', (err) => console.error('Error:', err.message))
 
                         .on('finish', () => {
-                            
+
                             return res.json({ newlyAdded: results.length })
                             //     Operation.findByIdAndUpdate(savedInsert._id, {
                             //         details: { isProgressEnd: true }
@@ -114,9 +115,5 @@ router.post('/start', verifyToken, async (req, res) => {
 
         })
 })
-
-function promiseThunk(lineBatch) {
-    return new Promise();
-}
 
 module.exports = router

@@ -1,8 +1,9 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const { join } = require('path');
+const through2 = require('through2')
 
-const tableUUID = '09cf2c62-f68b-4c8c-bd73-00be7d43bd85';
+const tableUUID = 'a5f4c313-98b4-45d8-9270-09f6dcc47fc4';
 
 const fileLocation = join(__dirname, `./tables/${tableUUID}.csv`);
 
@@ -10,4 +11,7 @@ const reader = fs.createReadStream(fileLocation);
 
 const parser = reader.pipe(csv()); 
 
-parser.on('data', (chunk) => console.log(chunk));
+parser.pipe(through2.obj((chunk, enc, cb) => {
+    console.log(chunk);
+    cb();
+}))
