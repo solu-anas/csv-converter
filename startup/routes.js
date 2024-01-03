@@ -11,4 +11,7 @@ module.exports = function(app) {
     app.use('/api/users', usersRouter);
     app.use('/api/inserts', insertsRouter);
     app.use('/', testRouter);
+    app.get('/api/ping', (req, res) => {
+        res.send('Yaaay')
+    })
 };

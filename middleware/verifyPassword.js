@@ -10,6 +10,8 @@ async function verifyPassword(req, res, next) {
 
     try {
         const hash = createHash('sha256').update(password + user.password.salt).digest('hex');
+        console.log('created hash:', hash);
+        console.log('stored hash:', user.password.hash);
         if (hash === user.password.hash) {
             req.user = user;
             next();

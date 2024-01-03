@@ -1,4 +1,4 @@
-form#form(action='/api/uploads' method='post' enctype='multipart/form-data')
+form#form(action='/api/uploads/start' method='post' enctype='multipart/form-data')
   p
     | CSV File: 
     input(type='file' name='file')
@@ -8,11 +8,11 @@ script.
   const form = document.getElementById('form');
   form.onsubmit = (event) => {
   event.preventDefault()
-  fetch('/api/uploads', {
+  fetch('/api/uploads/start', {
         method: 'POST',
         body: new FormData(form),
         headers: {
-            "x-auth-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTg5ZWY3YTE5OGI0YmY0ZDQ0NWI3YzEiLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MDM1Mzg1NTR9.xKB6TAS5Q410-3MXhG3BKhoD6kz22UcU9YLoAbtBrjQ"
+            "x-auth-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTk1NjNkOTk0MmJhNTJlODY4MTU5YWMiLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MDQyODkyNDF9.GRFMo2mME0AaME1xPZ95it_iRAgmU7bFGN47cCW_RZI"
         }
         }).then((response) => {
                 console.log(response)

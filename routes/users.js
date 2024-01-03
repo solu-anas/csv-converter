@@ -6,25 +6,25 @@ const router = express.Router();
 const { User } = require('../models/user');
 
 router.get('/me', verifyPassword, async (req, res) => {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select('-password -token');
     res.send(user);
 });
 
 router.get('/dashboard', verifyToken, (req, res) => {
-    // TODO
+    res.send('Hoorray');
 });
 
 router.get('/all', verifyPassword, async (req, res) => {
-    const users = await User.find().select('-password').sort('name');
+    const users = await User.find().select('-password -token').sort('name');
     res.json({ users: users });
 });
 
 router.get('/login', verifyPassword, async (req, res) => {
     const user = await User.findById(req.user._id);
-    res.json({ token: token });
+    res.json({ token: user.token });
 });
 
-router.post('/', async (req, res) => {
+router.post('/create', async (req, res) => {
     let user = await User.findOne({ email: req.body.email });
     if (user) return res.status(400).send('User already registered.');
 
@@ -33,9 +33,14 @@ router.post('/', async (req, res) => {
         email: req.body.email,
     });
 
-    user.password.hash = createHash('sha256').update(req.body.password + user.password.salt).digest('hex');
-    user.save();
-    res.header('x-auth-token', user.generateAuthToken()).send('created user successfully!');
+    user.password.hash = user.generateHash(req.body.password, user.password.salt);
+    user.token = user.generateAuthToken();
+
+    user.save()
+        .then(() => {
+            res.send('created user successfully!');
+        })
+        .catch((err) => res.status(500).send('internal server Error'));
 });
 
 module.exports = router;
