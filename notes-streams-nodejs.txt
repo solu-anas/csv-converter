@@ -1,0 +1,112 @@
+Streams in nodejs
+
+=> Source | Internal Queue | Buffer | Consumer
+=> 'close' vs. 'end' vs.'finish'
+---------------------------------------------------------------------------
+
+=> 'close' event
+	-> no more events will be emitted
+	-> no more computation will be emitted
+
+=> 'error' event
+	-> 'close' event will be emitted
+	-> { autoDestroy = false } option is set -> stream will not be closed
+	-> no further events other than 'close' should be emitted (including 'error' events)
+
+=> 'drain' event
+	-> resume writing data to the stream
+
+=> 'finish' event
+	-> all data has been flushed to the underlying system
+
+=> 'pipe'
+	-> add this.writable to stream.pipe()' set of destinations
+
+=> 'unpipe'
+	-> remove this.writable from stream.pipe()' set of destinations
+-------------------------------------------------------------------------
+=> highWaterMark
+	-> Buffer Mode: hwm = total number of bytes
+	-> Object Mode: hwm = total number of objects
+
+=> stream.push(chunk)
+	-> Data Buffering starts
+
+=> stream.read()
+	-> Data is readable?
+
+=> stream.write(chunk)
+	-> Data Buffering starts
+	-> true: buffer size < highwatermark
+	-> false: buffer size > highwatermark
+		
+		-> emit 'drain' event
+	
+
+=> writable.end()
+	-> 'finish' event will be emitted
+	-> data will flush, no more data will be written to the writable
+	-> calling stream.write() after will raise an error
+
+=> stream.pipe()
+	-> 'pipe' event will be emitted
+	-> 'error' event will be emitted if error has occured with this.Writable
+		-> 'unpipe' event will be emitted if 'error' event is emitted
+
+=> stream.unpipe()
+	->
+
+=> writable.cork()
+	-> forces all written data to be buffered in memory
+	-> if it is called multiple times on a stream, the same number of calls to writable.uncork() must be called to flush the buffered data
+
+=> writable.uncork()
+	-> flushes all data buffered since stream.cork() was called
+	->
+
+=> writable._writev()
+
+=> writable.destroy()
+	-> immediately destroy the stream
+	-> optionally emit an 'error' event
+	-> emit a 'close' event (unless { emitClose=false })
+
+=> writable.setDefaultEncoding(encoding)
+	-> sets the default encoding for a Writable stream
+
+=> writable.closed
+	-> true: after 'close' has been emitted
+
+=> writable.destroyed
+	-> true: after writable.destroy() has been called
+
+=> writable.writable
+	-> true: safe to call writable.write(), the stream has not been:	
+		- destroyed
+		- errored
+		- ended
+
+=> writable.writableAborted
+	-> ? (experimental)
+
+=> writable.writableEnded
+	-> true: after writable.end() has been called
+	-> Does not indicate whether the data has been flushed
+
+=> writable.writableCorked
+	-> number of times writable.uncork() needs to be called in order to fully uncork the stream
+
+=> writable.errored
+	-> returns error if the stream has been destroyed with an error
+	-> (writable.destroy() was called and emitted an 'error' event)
+
+=> writable.writableFinished
+	-> true: immediately before the 'finish' event is emitted
+
+=> writable.writableHighWaterMark
+=> writable.writableLength
+=> writable.writableNeedDrain
+=> writable.writableObjectMode
+
+-> writable.WritableBuffer
+-> readable.readableBuffer
