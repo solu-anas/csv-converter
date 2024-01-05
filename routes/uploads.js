@@ -3,24 +3,18 @@ const verifyToken = require('../middleware/token');
 const uploadsController = require('../controllers/upload');
 const router = express.Router();
 const fields = require('../fields.json');
-const multer = require('multer');
-const { join, parse } = require('path');
-const upload = multer({ dest: join(__dirname, '../tables/') })
-const { randomUUID } = require('crypto');
-const uuid = randomUUID();
-const { parseStream } = require('fast-csv');
-const { Readable } = require('stream');
-const streamifier = require('streamifier');
+const busboy = require('connect-busboy');
+
+// configure connect-busboy options
+router.use(busboy({
+    highWaterMark: 2 * 1024 * 1024, // 2MiB buffer
+    // limits: {
+    //     fileSize: 10 * 1024 * 1024 // 10MiB limit
+    // }
+}));
 
 // route 1
-router.post('/start', verifyToken, upload.single('file'), async (req, res) => {
-    console.log(req);
-    const fileStream = streamifier.createReadStream(req.file);
-    const parser = parseStream(fileStream);
-    parser.on('data', data => console.log(data))
-    parser.on('end', () => res.send('Parsed Successfully'))
-    parser.on('error', (err) => console.error('error:',err.message))
-});
+router.post('/start', verifyToken, uploadsController);
 
 // route 2
 router.get('/fields', (req, res) => {

@@ -1,15 +1,47 @@
 const { Operation } = require('../models/operation');
 const { Table } = require('../models/table');
-const { Transform } = require('stream');
+const { randomUUID } = require('crypto');
 const fs = require('fs');
+const path = require('path');
+const csv = require('fast-csv');
+const { Transform } = require('stream');
 
-
+module.exports = async (req, res) => {
+    const randomFilename = randomUUID();
+    req.busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        // parse the file stream with fast-csv
+        csv.parseStream(file, { headers: true })
+            .on('error', (error) => console.error(error))
+            .on('data', (row) => {
+                // console log each row
+                console.log(row)
+            })
+            .on('end', (count) => {
+                // send a response to the client
+                res.json({ message: 'File uploaded and processed successfully', count: count });
+            })
+            // format: tranform the row back to a buffer
+            .pipe(csv.format({ headers: true }))
+            // format: console log the buffer and continue
+            .pipe(new Transform({
+                transform(chunk, enc, cb) {
+                    console.log(chunk);
+                    cb(null, chunk);
+                }
+            }))
+            .pipe(fs.createWriteStream(path.join(__dirname, `../tables/${randomFilename}.csv`)))
+            
+    })
+    req.pipe(req.busboy);
+    req.busboy.on('finish', () => {
+        // do something after all the data is parsed
+    });
+}
     
     // // new table entry
     // const table = new Table({
-    //     uuid: req.file.filename,
+    //     uuid: randomFilename,
     //     owner: req.user._id,
-    //     originalName: req.file.originalname,
     //     size: req.file.size
     // });
     // await table.save();
