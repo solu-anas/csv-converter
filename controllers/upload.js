@@ -1,48 +1,50 @@
 const { Operation } = require('../models/operation');
 const { Table } = require('../models/table');
+const { Transform } = require('stream');
+const fs = require('fs');
 
-module.exports = async (req, res) => {
-    // new table entry
-    const table = new Table({
-        uuid: req.file.filename,
-        owner: req.user._id,
-        originalName: req.file.originalname,
-        size: req.file.size
-    });
-    await table.save();
 
-    // new operation (type: "upload") entry
-    const upload = new Operation({
-        type: "upload",
-        table: table._id,
-        user: req.user._id
-    });
-    await upload.save();
+    
+    // // new table entry
+    // const table = new Table({
+    //     uuid: req.file.filename,
+    //     owner: req.user._id,
+    //     originalName: req.file.originalname,
+    //     size: req.file.size
+    // });
+    // await table.save();
 
-    console.log(`Upload Operation Completed Successfully...\nFrom:\t${table.originalName} (${table.size * 0.001} KB), by ${table.owner}\nto:\t${__dirname + '/' + table.uuid}.csv
-    `)
+    // // new operation (type: "upload") entry
+    // const upload = new Operation({
+    //     type: "upload",
+    //     table: table._id,
+    //     user: req.user._id
+    // });
+    // await upload.save();
 
-    // sending response
-    const pipeline = [
-        { $match: { _id: upload._id } },
-        {
-            $lookup: {
-                from: "tables",
-                localField: "table",
-                foreignField: "_id",
-                as: "table"
-            }
-        },
-        { $unwind: "$table" },
-        {
-            $project: {
-                _id: 0,
-                "uploadId": "$_id",
-                "tableUUID": "$table.uuid"
-            }
-        },
-        { $unwind: "$tableUUID" },
-    ];
-    const results = await Operation.aggregate(pipeline);
-    return res.send(results[0]);
-}
+    // console.log(`Upload Operation Completed Successfully...\nFrom:\t${table.originalName} (${table.size * 0.001} KB), by ${table.owner}\nto:\t${__dirname + '/' + table.uuid}.csv
+    // `)
+
+    // // sending response
+    // const pipeline = [
+    //     { $match: { _id: upload._id } },
+    //     {
+    //         $lookup: {
+    //             from: "tables",
+    //             localField: "table",
+    //             foreignField: "_id",
+    //             as: "table"
+    //         }
+    //     },
+    //     { $unwind: "$table" },
+    //     {
+    //         $project: {
+    //             _id: 0,
+    //             "uploadId": "$_id",
+    //             "tableUUID": "$table.uuid"
+    //         }
+    //     },
+    //     { $unwind: "$tableUUID" },
+    // ];
+    // const results = await Operation.aggregate(pipeline);
+    // return res.send(results[0]);

@@ -1,7 +1,7 @@
 const { createHash } = require('crypto');
 const express = require('express');
-const verifyPassword = require('../middleware/verifyPassword');
-const verifyToken = require('../middleware/verifyToken');
+const verifyPassword = require('../middleware/password');
+const verifyToken = require('../middleware/token');
 const router = express.Router();
 const { User } = require('../models/user');
 

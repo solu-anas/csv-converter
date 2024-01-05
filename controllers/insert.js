@@ -1,11 +1,13 @@
 const { Table } = require('../models/table');
 const { Operation } = require('../models/operation');
 const { Person } = require('../models/person');
-const { Transform } = require('stream');
+const { Transform, pipeline } = require('stream');
 const fs = require('fs');
 const { join } = require('path');
 const { mapKeys } = require('lodash');
 const csv = require('csv-parser');
+const { parse } = require('fast-csv');
+
 
 module.exports = async (req, res) => {
     // find table
@@ -28,28 +30,44 @@ module.exports = async (req, res) => {
 
     // insertion pipeline
     const reader = fs.createReadStream(join(__dirname, `../tables/${table.uuid}.csv`));
-    reader.on('error', (err) => {
-        console.error('Reading Error:', err.message);
-    });
+    const parser = reader.pipe(parse());
+    parser.on('data', row => console.log(row))
+    parser.on('end', rowCount => console.log(rowCount));
+    
+    const mapper = mapRowToDoc();
+    const inserter = insertInDB();
+    
+    // pipeline(reader, parser, mapper, inserter, (err) => {
+    //     if (err) {
+    //         console.error('Pipeline failed.', err);
+    //         res.send(`Error: ${err.message}`);
+    //     } else {
+    //         console.log('Pipeline succeeded.');
+    //         return res.json({ insertionId: insert._id });
+    //     }
+    // });
 
-    const parser = reader.pipe(csv());
-    parser.on('error', (err) => {
-        console.error('Parsing Error:', err.message);
-    });
-
-    parser.pipe(mapRowToDocInsertInDB())
-        .on('error', (err) => console.log(err.message));
-
-    // sending the response
-    return res.json({ insertionId: insert._id });
-
-    function mapRowToDocInsertInDB() {
-        let progress = 0;
+    function mapRowToDoc() {
         const mapping = new Map(req.body.mapping);
         const transformerOpts = {
-            async transform(chunk, enc, cb) {
+            transform(chunk, enc, cb) {
                 const document = mapKeys(chunk, (value, key) => mapping.get(key));
                 document.insertId = insert._id;
+                cb(null, document);
+            },
+            objectMode: true
+        }
+        return new Transform(transformerOpts);
+    }
+
+    function insertInDB() {
+        let progress = 0;
+        const transformerOpts = {
+            async transform(document, enc, cb) {
+                document.insertId = insert._id;
+                if (await Person.findOne({ email: document.email })) {
+                    return cb();
+                };
                 const newPerson = new Person(document);
                 newPerson
                     .save()
