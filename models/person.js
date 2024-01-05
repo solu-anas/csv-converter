@@ -5,7 +5,13 @@ const personSchema = new Schema({
     address: String,
     age: String,
     zipCode: String,
-    email: String
+    email: {
+        type: String,
+        unique: true
+    },
+    insertId: {
+        type: Types.ObjectId
+    }
 });
 
 const Person = model('Person', personSchema);

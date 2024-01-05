@@ -18,13 +18,13 @@ module.exports = async (req, res) => {
     }
 
     // new operation (type: "insert") entry
-    let insertOp = new Operation({
+    let insert = new Operation({
         type: "insert",
         user: req.user._id,
         table: table._id,
         details: { progress: 0, isProgressEnd: false }
     });
-    await insertOp.save();
+    insert = await insert.save();
 
     // insertion pipeline
     const reader = fs.createReadStream(join(__dirname, `../tables/${table.uuid}.csv`));
@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
         .on('error', (err) => console.log(err.message));
 
     // sending the response
-    return res.send('Insertion Started Successfully');
+    return res.json({ insertionId: insert._id });
 
     function mapRowToDocInsertInDB() {
         let progress = 0;
@@ -49,14 +49,17 @@ module.exports = async (req, res) => {
         const transformerOpts = {
             async transform(chunk, enc, cb) {
                 const document = mapKeys(chunk, (value, key) => mapping.get(key));
+                document.insertId = insert._id;
                 const newPerson = new Person(document);
-                newPerson.save().then(() => {
-                    Operation.findByIdAndUpdate(insertOp._id, { details: { progress: ++progress, isProgressEnd: false } })
-                        .then(() => {
-                            console.log(`${progress}: inserted: ${JSON.stringify(document)}`);
-                            cb();
-                        })
-                })
+                newPerson
+                    .save()
+                    .then(() => {
+                        return Operation.findByIdAndUpdate(insert._id, { details: { progress: ++progress, isProgressEnd: false } })
+                    })
+                    .then(() => {
+                        console.log(`${progress}: inserted: ${JSON.stringify(document)}`);
+                        cb();
+                    })
             },
             objectMode: true
         }
