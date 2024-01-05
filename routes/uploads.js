@@ -7,7 +7,7 @@ const fields = require('../fields.json');
 
 
 // route 1
-router.post('/start',verifyToken, upload('file'), uploadsController);
+router.post('/start', verifyToken, upload('file'), uploadsController);
 
 // route 2
 router.get('/fields', (req, res) => {

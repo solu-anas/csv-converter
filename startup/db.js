@@ -5,4 +5,3 @@ module.exports = function () {
         .then(() => console.log('Connected to mongoDB successfully ...'))
         .catch((err) => console.log(err.message));
 };
-

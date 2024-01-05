@@ -40,7 +40,10 @@ router.post('/create', async (req, res) => {
         .then(() => {
             res.send('created user successfully!');
         })
-        .catch((err) => res.status(500).send('internal server Error'));
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send('User Creation Error');
+        });
 });
 
 module.exports = router;

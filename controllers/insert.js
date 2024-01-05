@@ -7,7 +7,6 @@ const { join } = require('path');
 const { mapKeys } = require('lodash');
 const csv = require('csv-parser');
 
-
 module.exports = async (req, res) => {
     // find table
     let table;
@@ -38,23 +37,26 @@ module.exports = async (req, res) => {
         console.error('Parsing Error:', err.message);
     });
 
-    parser.pipe(mapRow2DocinsertInDB())
+    parser.pipe(mapRowToDocInsertInDB())
         .on('error', (err) => console.log(err.message));
 
     // sending the response
     return res.send('Insertion Started Successfully');
 
-    function mapRow2DocinsertInDB() {
+    function mapRowToDocInsertInDB() {
         let progress = 0;
         const mapping = new Map(req.body.mapping);
         const transformerOpts = {
             async transform(chunk, enc, cb) {
                 const document = mapKeys(chunk, (value, key) => mapping.get(key));
-                const newPeople = new Person(document);
-                await newPeople.save();
-                await Operation.findByIdAndUpdate(insertOp._id, { details: { progress: ++progress, isProgressEnd: false } });
-                console.log(`${progress}: inserted: ${document}`);
-                cb();
+                const newPerson = new Person(document);
+                newPerson.save().then(() => {
+                    Operation.findByIdAndUpdate(insertOp._id, { details: { progress: ++progress, isProgressEnd: false } })
+                        .then(() => {
+                            console.log(`${progress}: inserted: ${JSON.stringify(document)}`);
+                            cb();
+                        })
+                })
             },
             objectMode: true
         }
