@@ -4,19 +4,19 @@ Streams in nodejs
 => 'close' vs. 'end' vs.'finish'
 ---------------------------------------------------------------------------
 
-=> 'close' event
+=> 'close'
 	-> no more events will be emitted
-	-> no more computation will be emitted
+	-> no more computation will occur
 
-=> 'error' event
+=> 'error'
 	-> 'close' event will be emitted
 	-> { autoDestroy = false } option is set -> stream will not be closed
 	-> no further events other than 'close' should be emitted (including 'error' events)
 
-=> 'drain' event
+=> 'drain'
 	-> resume writing data to the stream
 
-=> 'finish' event
+=> 'finish'
 	-> all data has been flushed to the underlying system
 
 => 'pipe'
@@ -24,6 +24,28 @@ Streams in nodejs
 
 => 'unpipe'
 	-> remove this.writable from stream.pipe()' set of destinations
+
+=> 'readable'
+	-> there is data available to be read from the stream
+	-> the end of the stream has been reached
+		-> 
+	-> indicates that the stream has new information
+
+=> 'data'
+	-> relinquishing ownership of a chunk of data to a consumer
+	->
+=> 'end'
+	-> there is no more data to be consumed from the stream
+	-> will not be emitted unless the data is completely consumed
+	-> stream.read() returns null
+
+=> 'pause'
+	-> when stream.pause() is called && (readable.readableFlowing !== false)
+
+=> 'resume'
+	-> when stream.resume() is called
+	-> readableFlowing !== true
+
 -------------------------------------------------------------------------
 => highWaterMark
 	-> Buffer Mode: hwm = total number of bytes
@@ -33,7 +55,14 @@ Streams in nodejs
 	-> Data Buffering starts
 
 => stream.read()
-	-> Data is readable?
+	-> Data is readable
+	-> 'data' event will be emitted
+	-> if called repeatedly untill all data has been consumed, 'end' event will be emitted
+	-> returns the data available after 'readable' event is emitted
+	-> returns null and trigger 'end' event if the end of the stream has been reached
+
+=> stream.resume()
+	-> 
 
 => stream.write(chunk)
 	-> Data Buffering starts
@@ -42,8 +71,11 @@ Streams in nodejs
 		
 		-> emit 'drain' event
 	
+=> stream.pause()
+	-> emit 'pause' event
+	-> switch reading to 'pause' mode
 
-=> writable.end()
+=> stream.end()
 	-> 'finish' event will be emitted
 	-> data will flush, no more data will be written to the writable
 	-> calling stream.write() after will raise an error
@@ -108,5 +140,51 @@ Streams in nodejs
 => writable.writableNeedDrain
 => writable.writableObjectMode
 
+-------------------------------------------------------------------------
+stream.Readable
+
+=> Will not generate data until a mechanism for either consuming or ignoring that data is provided
+
+=> reading modes
+	-> flowing mode
+		-> data is read automatically
+		-> enabled in one of the following ways:
+			-> adding a 'data' event handler
+			-> calling the stream.resume() method
+			-> calling the stream.pipe() method	
+	-> paused mode
+		-> stream.read() method must be called explicitly
+		-> re-enabled in one of the following ways:
+			-> there are no pipe destinations
+				-> calling stream.pause() method
+			-> there are pipe destinations
+				-> removing all pipe destinations, by calling stream.unpipe()
+			-> receiving backpressure
+
+=> Every Readable is in one of the three possible states
+=> readable.readableFlowing
+	-> null
+		-> no mechanism for consuming the stream's data is provided
+		-> the stream will not generate data
+		-> 'resume' event will be emitted
+
+	-> true
+		-> actively emitting events as data is generated
+	
+	-> false
+		-> temporarily halting the flowing of events but not halting the generation of data
+		-> data may be accumulating within the stream's internal buffer
+		-> 'resume' event will be emitted
+
+------------------------------------------------------------------------------
+API style
+=> avoid using on('data'), on('readable'), pipe() or async iterators together
+
+=> 'readable' + 'data'
+	-> 'readable' takes precedence
+	-> 'data' will be emitted only when stream.read() is called
+	-> readable.Flowing == false
+
+-------------------------------------------------------------------------------
 -> writable.WritableBuffer
 -> readable.readableBuffer

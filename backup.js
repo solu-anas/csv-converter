@@ -57,20 +57,9 @@ router.post('/start', verifyToken, async (req, res) => {
 
                     const parser = fs.createReadStream(fileLocation).pipe(csv());
 
-                    let buffer = [];
-                    const bufferSize = 100;
 
                     parser
                         .pipe(through2.obj((chunk, enc, cb) => {
-                            const document = _.mapKeys(chunk, (value, key) => mapping.get(key));
-                            // buffer.push(document);
-                            // if (buffer.length < bufferSize) cb();
-                            // else {
-                            //     // empty the buffer
-                            //     buffer = [];
-                            //     cb();
-                            // }
-
                             console.log(document);
                             (new Person(document))
                                 .save()

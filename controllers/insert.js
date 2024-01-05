@@ -9,12 +9,17 @@ const csv = require('csv-parser');
 
 
 module.exports = async (req, res) => {
-    const table = await Table.findOne({ uuid: req.body.tableUUID });
-    if (!table) return res.status(404).send('Table Not Found');
-
+    // find table
+    let table;
+    try {
+        table = await Table.findOne({ uuid: req.body.tableUUID });
+    } catch (err) {
+        console.error("Error:", err.message);
+        res.status(500).send('Table Lookup Error');
+    }
 
     // new operation (type: "insert") entry
-    const insertOp = new Operation({
+    let insertOp = new Operation({
         type: "insert",
         user: req.user._id,
         table: table._id,
@@ -22,23 +27,37 @@ module.exports = async (req, res) => {
     });
     await insertOp.save();
 
-    const mapping = new Map(req.body.mapping);
+    // insertion pipeline
     const reader = fs.createReadStream(join(__dirname, `../tables/${table.uuid}.csv`));
+    reader.on('error', (err) => {
+        console.error('Reading Error:', err.message);
+    });
+
     const parser = reader.pipe(csv());
-    
-    const transformer = parser.pipe(insert(insertOp, mapping));
-    
-    return res.json({ details: insertOp.details });
-}
+    parser.on('error', (err) => {
+        console.error('Parsing Error:', err.message);
+    });
 
+    parser.pipe(mapRow2DocinsertInDB())
+        .on('error', (err) => console.log(err.message));
 
-async function insert(insertOp, mapping) {
-    return new Transform(async (chunk, enc, cb) => {
+    // sending the response
+    return res.send('Insertion Started Successfully');
+
+    function mapRow2DocinsertInDB() {
         let progress = 0;
-        const document = mapKeys(chunk, (value, key) => mapping.get(key));
-        const newPeople = new Person(document);
-        await newPeople.save();
-        await Operation.findByIdAndUpdate(insertOp._id, { details: { progress: ++progress } });
-        cb();
-    })
+        const mapping = new Map(req.body.mapping);
+        const transformerOpts = {
+            async transform(chunk, enc, cb) {
+                const document = mapKeys(chunk, (value, key) => mapping.get(key));
+                const newPeople = new Person(document);
+                await newPeople.save();
+                await Operation.findByIdAndUpdate(insertOp._id, { details: { progress: ++progress, isProgressEnd: false } });
+                console.log(`${progress}: inserted: ${document}`);
+                cb();
+            },
+            objectMode: true
+        }
+        return new Transform(transformerOpts);
+    }
 }

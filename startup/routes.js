@@ -3,6 +3,7 @@ const uploadsRouter = require('../routes/uploads');
 const usersRouter = require('../routes/users');
 const testRouter = require('../routes/test');
 const insertsRouter = require('../routes/inserts');
+const errorHandler = require('../middleware/error');
 
 module.exports = function(app) {
     app.set('view engine', 'pug')
@@ -11,7 +12,5 @@ module.exports = function(app) {
     app.use('/api/users', usersRouter);
     app.use('/api/inserts', insertsRouter);
     app.use('/', testRouter);
-    app.get('/api/ping', (req, res) => {
-        res.send('Yaaay')
-    })
+    app.get('/', errorHandler)
 };
