@@ -20,63 +20,64 @@ module.exports = async (req, res) => {
                 // send a response to the client
                 res.json({ message: 'File uploaded and processed successfully', count: count });
             })
-            // format: tranform the row back to a buffer
+            // format the row back to a buffer chunk
             .pipe(csv.format({ headers: true }))
-            // format: console log the buffer and continue
+            // console log the buffer chunk and continue
             .pipe(new Transform({
                 transform(chunk, enc, cb) {
                     console.log(chunk);
                     cb(null, chunk);
                 }
             }))
+            // write the chunk to the file system
             .pipe(fs.createWriteStream(path.join(__dirname, `../tables/${randomFilename}.csv`)))
-            
+
     })
-    req.pipe(req.busboy);
     req.busboy.on('finish', () => {
         // do something after all the data is parsed
     });
+    req.pipe(req.busboy);
 }
-    
-    // // new table entry
-    // const table = new Table({
-    //     uuid: randomFilename,
-    //     owner: req.user._id,
-    //     size: req.file.size
-    // });
-    // await table.save();
 
-    // // new operation (type: "upload") entry
-    // const upload = new Operation({
-    //     type: "upload",
-    //     table: table._id,
-    //     user: req.user._id
-    // });
-    // await upload.save();
+// // new table entry
+// const table = new Table({
+//     uuid: randomFilename,
+//     owner: req.user._id,
+//     size: req.file.size
+// });
+// await table.save();
 
-    // console.log(`Upload Operation Completed Successfully...\nFrom:\t${table.originalName} (${table.size * 0.001} KB), by ${table.owner}\nto:\t${__dirname + '/' + table.uuid}.csv
-    // `)
+// // new operation (type: "upload") entry
+// const upload = new Operation({
+//     type: "upload",
+//     table: table._id,
+//     user: req.user._id
+// });
+// await upload.save();
 
-    // // sending response
-    // const pipeline = [
-    //     { $match: { _id: upload._id } },
-    //     {
-    //         $lookup: {
-    //             from: "tables",
-    //             localField: "table",
-    //             foreignField: "_id",
-    //             as: "table"
-    //         }
-    //     },
-    //     { $unwind: "$table" },
-    //     {
-    //         $project: {
-    //             _id: 0,
-    //             "uploadId": "$_id",
-    //             "tableUUID": "$table.uuid"
-    //         }
-    //     },
-    //     { $unwind: "$tableUUID" },
-    // ];
-    // const results = await Operation.aggregate(pipeline);
-    // return res.send(results[0]);
+// console.log(`Upload Operation Completed Successfully...\nFrom:\t${table.originalName} (${table.size * 0.001} KB), by ${table.owner}\nto:\t${__dirname + '/' + table.uuid}.csv
+// `)
+
+// // sending response
+// const pipeline = [
+//     { $match: { _id: upload._id } },
+//     {
+//         $lookup: {
+//             from: "tables",
+//             localField: "table",
+//             foreignField: "_id",
+//             as: "table"
+//         }
+//     },
+//     { $unwind: "$table" },
+//     {
+//         $project: {
+//             _id: 0,
+//             "uploadId": "$_id",
+//             "tableUUID": "$table.uuid"
+//         }
+//     },
+//     { $unwind: "$tableUUID" },
+// ];
+// const results = await Operation.aggregate(pipeline);
+// return res.send(results[0]);
