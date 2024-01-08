@@ -1,62 +1,71 @@
-const { Operation } = require('../models/operation');
-const { Table } = require('../models/table');
+const { join } = require('path');
 const { randomUUID } = require('crypto');
+const { parseStream, format } = require('fast-csv');
+const { Table } = require('../models/table');
+const { Operation } = require('../models/operation');
+const { Transform, pipeline } = require('stream');
 const fs = require('fs');
-const path = require('path');
-const csv = require('fast-csv');
-const { Transform } = require('stream');
 
 module.exports = async (req, res) => {
-    const randomFilename = randomUUID();
-    req.busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-        // parse the file stream with fast-csv
-        csv.parseStream(file, { headers: true })
-            .on('error', (error) => console.error(error))
-            .on('data', (row) => {
-                // console log each row
-                console.log(row)
-            })
-            .on('end', (count) => {
-                // send a response to the client
-                res.json({ message: 'File uploaded and processed successfully', count: count });
-            })
-            // format the row back to a buffer chunk
-            .pipe(csv.format({ headers: true }))
-            // console log the buffer chunk and continue
-            .pipe(new Transform({
-                transform(chunk, enc, cb) {
-                    console.log(chunk);
-                    cb(null, chunk);
+    // create new table and operation entry
+    req.busboy.on('file', (name, file, info) => {
+        // Creating the Entries in DB
+        const randomFilename = randomUUID();
+        const table = new Table({
+            originalName: info.filename,
+            uuid: randomFilename,
+            owner: req.user._id,
+            // size: req.file.size
+        });
+        table.save().then((table) => {
+            console.log('Created new Entry to Tables DB')
+            const upload = new Operation({
+                type: "upload",
+                table: table._id,
+                user: req.user._id,
+                details: {
+                    isProgressEnd: false
                 }
-            }))
-            // write the chunk to the file system
-            .pipe(fs.createWriteStream(path.join(__dirname, `../tables/${randomFilename}.csv`)))
+            });
+            upload.save().then(() => {
+                console.log('Created new Entry to Operations DB ...')
+            });
+        })
+        
+        // Parsing the .csv file
+        const parser = parseStream(file, { headers: true });
+        parser.on('data', (data) => {
+            // TODO: track parsing progress
+            console.log(typeof data);
+        })
+        parser.on('end', (rowCount) => {
+            table.rowCount = rowCount;
+            // console.log(`Parsed ${rowCount} Rows`);
+        });
+        parser.on('error', (err) => console.error('Parsing Error:', err.message));
+
+        // Formatting the .csv file
+        const formatter = parser.pipe(format({ headers: true }))
+        formatter.on('error', (err) => console.error('Formatting Error:', err.message))
+
+        // Writing the .csv file to the filesystem
+        const writer = formatter.pipe(fs.createWriteStream(join(__dirname, `../tables/${randomFilename}.csv`)));
+        writer.on('data', (data) => {
+            // track the writing progress
+            
+        })
 
     })
+
     req.busboy.on('finish', () => {
         // do something after all the data is parsed
+        res.send('Upload Successful');
     });
+
     req.pipe(req.busboy);
-}
 
-// // new table entry
-// const table = new Table({
-//     uuid: randomFilename,
-//     owner: req.user._id,
-//     size: req.file.size
-// });
-// await table.save();
+};
 
-// // new operation (type: "upload") entry
-// const upload = new Operation({
-//     type: "upload",
-//     table: table._id,
-//     user: req.user._id
-// });
-// await upload.save();
-
-// console.log(`Upload Operation Completed Successfully...\nFrom:\t${table.originalName} (${table.size * 0.001} KB), by ${table.owner}\nto:\t${__dirname + '/' + table.uuid}.csv
-// `)
 
 // // sending response
 // const pipeline = [
@@ -80,4 +89,4 @@ module.exports = async (req, res) => {
 //     { $unwind: "$tableUUID" },
 // ];
 // const results = await Operation.aggregate(pipeline);
-// return res.send(results[0]);
+// res.send(results[0]);
