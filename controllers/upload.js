@@ -1,60 +1,52 @@
 const { join } = require('path');
 const { randomUUID } = require('crypto');
-const { parseStream, format } = require('fast-csv');
+const { parseStream, format, writeToPath, parse, writeToStream, writeToBuffer } = require('fast-csv');
 const { Table } = require('../models/table');
 const { Operation } = require('../models/operation');
-const { Transform, pipeline } = require('stream');
+const { Transform, pipeline, finished } = require('stream');
+const { EOL } = require('os');
 const fs = require('fs');
+const { chunk } = require('lodash');
 
 module.exports = async (req, res) => {
     // create new table and operation entry
     req.busboy.on('file', (name, file, info) => {
         // Creating the Entries in DB
         const randomFilename = randomUUID();
+        const path = join(__dirname, `../tables/${randomFilename}.csv`);
+
         const table = new Table({
             originalName: info.filename,
             uuid: randomFilename,
             owner: req.user._id,
             // size: req.file.size
         });
-        table.save().then((table) => {
-            console.log('Created new Entry to Tables DB')
+        table.save().then((savedTable) => {
             const upload = new Operation({
                 type: "upload",
                 table: table._id,
                 user: req.user._id,
                 details: {
-                    isProgressEnd: false
+                    isProgressEnd: false,
+                    progress: null
                 }
             });
-            upload.save().then(() => {
-                console.log('Created new Entry to Operations DB ...')
+            upload.save().then((savedUpload) => {
+                const parser = file.pipe(parse({ headers: true }));
+                parser.on('end', (rowCount) => {
+                    Table.findByIdAndUpdate(savedTable._id, { rowCount: rowCount }).then(() => { console.log(`Parsing: Parsed ${rowCount} Rows!`) })
+                });
+                const formatter = format();
+                const writer = writerAndMonitor(savedTable._id, savedUpload._id, path);
+
+                const pipeline = parser.pipe(formatter).pipe(writer);
+                pipeline.on('error', () => console.error('Upload Pipeline Error:', err.message));
+                pipeline.on('finish', () => {
+                    Operation.findByIdAndUpdate(savedUpload._id, { $set: { 'details.isProgressEnd': true } })
+                        .then((finishedUpload) => console.log('Upload Pipeline Finished!'))
+                });
             });
         })
-        
-        // Parsing the .csv file
-        const parser = parseStream(file, { headers: true });
-        parser.on('data', (data) => {
-            // TODO: track parsing progress
-            console.log(typeof data);
-        })
-        parser.on('end', (rowCount) => {
-            table.rowCount = rowCount;
-            // console.log(`Parsed ${rowCount} Rows`);
-        });
-        parser.on('error', (err) => console.error('Parsing Error:', err.message));
-
-        // Formatting the .csv file
-        const formatter = parser.pipe(format({ headers: true }))
-        formatter.on('error', (err) => console.error('Formatting Error:', err.message))
-
-        // Writing the .csv file to the filesystem
-        const writer = formatter.pipe(fs.createWriteStream(join(__dirname, `../tables/${randomFilename}.csv`)));
-        writer.on('data', (data) => {
-            // track the writing progress
-            
-        })
-
     })
 
     req.busboy.on('finish', () => {
@@ -66,6 +58,43 @@ module.exports = async (req, res) => {
 
 };
 
+function writerAndMonitor(tableId, uploadId, path) {
+    let progress = 0;
+    let fileSize = 0;
+    const destination = fs.createWriteStream(path);
+ 
+    return new Transform({
+        transform(chunk, enc, cb) {
+            // Check if the destination stream is ready to receive more data
+            if (!destination.write(chunk)) {
+                // If not, wait until it's ready
+                destination.once('drain', () => {
+                   this.push(chunk);
+                   cb();
+                });
+            } else {
+                // If it is ready, push the chunk and continue
+                this.push(chunk);
+                cb();
+            }
+ 
+            // Update fileSize and progress
+            fileSize += chunk.length;
+            ++progress;
+            console.log(chunk.toString());
+ 
+            // Update progress in Operation collection
+            Operation.findByIdAndUpdate(uploadId, { $set: { 'details.progress': progress } })
+                .then(() => {
+                   Table.findByIdAndUpdate(tableId, { size: fileSize })
+                       .then(() => {
+                           cb(null, chunk);
+                       })
+                })
+        }
+    });
+ }
+ 
 
 // // sending response
 // const pipeline = [

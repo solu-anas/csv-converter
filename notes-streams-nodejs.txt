@@ -68,8 +68,7 @@ Streams in nodejs
 	-> Data Buffering starts
 	-> true: buffer size < highwatermark
 	-> false: buffer size > highwatermark
-		
-		-> emit 'drain' event
+			-> emit 'drain' event
 	
 => stream.pause()
 	-> emit 'pause' event

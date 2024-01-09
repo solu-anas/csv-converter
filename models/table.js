@@ -17,7 +17,7 @@ const tableSchema = new Schema({
         required: true
     },
     size: {
-        type: String
+        type: Number
     },
     createdAt: {
         type: Date,
