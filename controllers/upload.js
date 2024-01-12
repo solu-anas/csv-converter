@@ -10,6 +10,7 @@ const { chunk } = require('lodash');
 
 module.exports = async (req, res) => {
     // create new table and operation entry
+    console.log('Am I working?');
     req.busboy.on('file', (name, file, info) => {
         // Creating the Entries in DB
         const randomFilename = randomUUID();
@@ -34,9 +35,11 @@ module.exports = async (req, res) => {
             upload.save().then((savedUpload) => {
                 const parser = file.pipe(parse({ headers: true }));
                 parser.on('end', (rowCount) => {
-                    Table.findByIdAndUpdate(savedTable._id, { rowCount: rowCount }).then(() => { console.log(`Parsing: Parsed ${rowCount} Rows!`) })
+                    Table.findByIdAndUpdate(savedTable._id, { rowCount: rowCount })
+                    //.then(() => { console.log(`Parsing: Parsed ${rowCount} Rows!`) })
                 });
                 const formatter = format();
+
                 const writer = writerAndMonitor(savedTable._id, savedUpload._id, path);
 
                 const pipeline = parser.pipe(formatter).pipe(writer);
@@ -59,63 +62,41 @@ module.exports = async (req, res) => {
 };
 
 function writerAndMonitor(tableId, uploadId, path) {
-    let progress = 0;
-    let fileSize = 0;
-    const destination = fs.createWriteStream(path);
- 
+
+    const writeStream = fs.createWriteStream(path);
+
     return new Transform({
-        transform(chunk, enc, cb) {
-            // Check if the destination stream is ready to receive more data
-            if (!destination.write(chunk)) {
-                // If not, wait until it's ready
-                destination.once('drain', () => {
-                   this.push(chunk);
-                   cb();
-                });
-            } else {
-                // If it is ready, push the chunk and continue
-                this.push(chunk);
-                cb();
+        transform(chunk, enc, next) {
+            const canWrite = writeStream.write(chunk);
+
+            // can write
+            // monitor and next
+            if (canWrite) {
+                monitor(tableId, uploadId, chunk)
+                next();
             }
- 
-            // Update fileSize and progress
-            fileSize += chunk.length;
-            ++progress;
-            console.log(chunk.toString());
- 
-            // Update progress in Operation collection
-            Operation.findByIdAndUpdate(uploadId, { $set: { 'details.progress': progress } })
-                .then(() => {
-                   Table.findByIdAndUpdate(tableId, { size: fileSize })
-                       .then(() => {
-                           cb(null, chunk);
-                       })
+
+            // cannot write
+            // wait for drain
+            // then monitor and next
+            else {
+                writeStream.on("drain", () => {
+                    monitor(tableId, uploadId, chunk)
+                    next();
                 })
+            }
         }
     });
- }
- 
+}
 
-// // sending response
-// const pipeline = [
-//     { $match: { _id: upload._id } },
-//     {
-//         $lookup: {
-//             from: "tables",
-//             localField: "table",
-//             foreignField: "_id",
-//             as: "table"
-//         }
-//     },
-//     { $unwind: "$table" },
-//     {
-//         $project: {
-//             _id: 0,
-//             "uploadId": "$_id",
-//             "tableUUID": "$table.uuid"
-//         }
-//     },
-//     { $unwind: "$tableUUID" },
-// ];
-// const results = await Operation.aggregate(pipeline);
-// res.send(results[0]);
+let progress = 0;
+let fileSize = 0;
+
+function monitor(tableId, uploadId, chunk) {
+    fileSize += chunk.length;
+    ++progress;
+
+    // Update progress in Operation collection
+    Operation.findByIdAndUpdate(uploadId, { $set: { 'details.progress': progress } })
+        .then(() => { Table.findByIdAndUpdate(tableId, { size: fileSize }); })
+}

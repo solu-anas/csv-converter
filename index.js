@@ -5,7 +5,7 @@ dotenv.config();
 require('./startup/routes')(app);
 require('./startup/db')();
 
-const port = process.env.PORT || 8000;
+const port = 5050;
 const server = app.listen(port, () => {
     console.log(`Listening to port ${port} ...`);
 });
