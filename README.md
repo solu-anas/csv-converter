@@ -12,10 +12,14 @@ Create a new user.
 |--------|----------------------------------|-------------------------|
 | POST | `https://<domain>/api/users/create` | No |
 
-#### Request Body
+#### Request
 
-| Parameter | Type |
-| --------- | ---- |
+##### Request Header
+
+##### Request Body (JSON)
+
+| Property Name | Type | Required | Description |
+| ------------- | ---- | -------- | ----------- |
 | name | ``String`` |
 | email | ``String`` |
 | password | ``String`` |
@@ -35,9 +39,9 @@ Create a new user.
 #### Example
 
 ```console
-curl - X POST 'https://<domain>/api/users/create'
-    - d '{"name": "John Doe", "email": "johndoe@example.com" "password": "123456789"}'
-     
+curl - X POST 'https://<domain>/api/users/create' \
+    - H "Content-Type: application/json" \
+    - d '{"name":"John Doe", "email":"johndoe@example.com" "password":"123456789"}'
 ```
 
 ##### Response
