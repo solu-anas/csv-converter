@@ -10,7 +10,6 @@ const { chunk } = require('lodash');
 
 module.exports = async (req, res) => {
     // create new table and operation entry
-    console.log('Am I working?');
     req.busboy.on('file', (name, file, info) => {
         // Creating the Entries in DB
         const randomFilename = randomUUID();
@@ -68,7 +67,7 @@ function writerAndMonitor(tableId, uploadId, path) {
     return new Transform({
         transform(chunk, enc, next) {
             const canWrite = writeStream.write(chunk);
-
+            console.log(chunk);
             // can write
             // monitor and next
             if (canWrite) {

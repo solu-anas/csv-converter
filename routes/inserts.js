@@ -12,6 +12,6 @@ router.post('/start', verifyToken, insertsController);
 router.get('/check-progress', progressController)
 
 // Undo Insertion
-router.post('/undo', verifyToken, undoController);
+router.delete('/undo', verifyToken, undoController);
 
 module.exports = router;

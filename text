@@ -1,1 +1,0 @@
-curl --header "x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWExMThhNmUxMGRlYmEzMGI1NjFkMjUiLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MDUwNTY0MjJ9.LR80nzTrTdVAe7X_yRVNiYLH_Kz4l_pQTjpBj7QAyyA" -d csv-generator/dF csv-generator/data.csv -X POST localhost:5050/api/uploads/start
